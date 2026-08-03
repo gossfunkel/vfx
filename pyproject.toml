@@ -1,0 +1,11 @@
+[project]
+name = "vfx"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = [
+    "numpy>=2.5.1",
+    "panda3d",
+]
+
+[tool.uv.sources]
+panda3d = { url = "https://buildbot.panda3d.org/downloads/bbcb283660e46c46c4f69af6919832c93d1b7e4b/panda3d-1.11.0.dev4085+shaderpipeline.388-cp313-cp313-win_amd64.whl" }

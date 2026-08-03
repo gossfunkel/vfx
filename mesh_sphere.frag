@@ -1,0 +1,15 @@
+#version 430
+
+//uniform uint num_verts;
+in vec4 vertex_col;
+
+layout (std430, binding = 0) buffer vert_buff {
+    vec3 pos[];
+};
+
+out vec4 p3d_FragColor;
+
+void main() {
+    // TODO differential calculation of normals from vtx pos data
+    p3d_FragColor = vertex_col;
+}

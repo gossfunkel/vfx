@@ -1,0 +1,47 @@
+#version 430
+
+const float TAU = 6.2831853;
+
+layout (local_size_x = 4, local_size_y = 4) in;
+uniform float osg_FrameTime;
+uniform float sphere_rad;
+uniform uint num_verts;
+uniform uint num_stacks;
+uniform uint num_sectors;
+
+layout (std430, binding = 0) buffer vert_buff {
+    vec3 pos[];
+};
+
+void main() {
+    uint vtx_id = 16 * gl_GlobalInvocationID.x + gl_GlobalInvocationID.y;
+    float stack, sector = 0.;
+    float rad = sphere_rad;
+    if (vtx_id != 0) {
+        stack = float(((vtx_id-1)/num_sectors)+1);
+        sector = float(((vtx_id-1)%num_sectors));
+    }
+    float sector_len = TAU / float(num_sectors);
+    float stack_len = (TAU/2.) / float(num_stacks);
+    float theta = TAU / 4. - stack * stack_len;
+
+    /*
+    if (uint(osg_FrameTime)%num_verts == (vtx_id-1)%num_verts) {
+        rad += mod(osg_FrameTime,1.);
+    } else if (uint(osg_FrameTime)%num_verts == vtx_id) {
+        rad += 1. +mod(osg_FrameTime,1.) * .5;
+    } else if (uint(osg_FrameTime)%num_verts == (vtx_id+1)%num_verts) {
+        rad += 2. - mod(osg_FrameTime,1.) * .5;
+    } else if (uint(osg_FrameTime)%num_verts == (vtx_id+2)%num_verts) {
+        rad += 1. - mod(osg_FrameTime,1.) 5;
+    }
+    */
+    rad += cos(5.*TAU * sector/float(num_sectors) + osg_FrameTime)*.5;
+    rad += 1. + sin(6.*TAU * stack/float(num_stacks) + osg_FrameTime);
+    
+    float xy = rad * cos(theta);
+    float phi = sector * sector_len;
+    pos[vtx_id].x = xy * cos(phi);
+    pos[vtx_id].y = xy * sin(phi);
+    pos[vtx_id].z = rad * sin(theta);
+}
