@@ -1,0 +1,52 @@
+#version 430
+
+layout (local_size_x = 1, local_size_y = 4) in;
+uniform float osg_FrameTime;
+uniform float osg_DeltaFrameTime;
+
+#include "hex_data.glsl"
+
+void main() {
+    uint sprite_id = gl_GlobalInvocationID.x + 64 * gl_GlobalInvocationID.y;
+    vec3 force = vec3(0.);
+
+    force.z += sprites[uint(sprites[sprite_id].neighbour.x)].pos_1.z
+                    - sprites[sprite_id].pos_1.z;
+    force.z += sprites[uint(sprites[sprite_id].neighbour.y)].pos_1.z
+                    - sprites[sprite_id].pos_1.z;
+    force.z += sprites[uint(sprites[sprite_id].neighbour.z)].pos_1.z
+                    - sprites[sprite_id].pos_1.z;
+
+    // lerp force
+    float dF = sprites[sprite_id].force.z - force.z;
+    // integrate to velocity
+    float dV = ((dF * dF) * (osg_DeltaFrameTime * osg_DeltaFrameTime)) / 2.;
+    // re-initialise position
+    sprites[sprite_id].pos_1 = sprites[sprite_id].pos_0;
+    // integrate to position
+    sprites[sprite_id].pos_1.z += (sprites[sprite_id].vel.z + pow(dV, max(1.,dF))) * osg_DeltaFrameTime;
+}
+    
+/* TODO now calculate the local rate of change of velocity at the end of the timestep based on the change in force
+     f_m1,   f_0,   f_1      (estimated) rate of change of vel (a_0, a_1, a_2)
+             v_0,   vel      (estimated) rate of change of pos (vi1, vi2)
+     pos_m1, pos_0, pos_1    (estimated) positions (xi0, xi1, xi2)
+then integrate the force over the timestep to find dV and re-estimate pos_1,
+ and then re-integrate the velocity over the timestep to get a final estimate for the position of the sprite?
+
+pos_0       ->  f_0
+f_0         ->  pos_1
+pos_1       ->  f_1
+f_0, f_1    -> df
+dF          -> dV
+dV          -> dPos
+
+the rate of change of x[i] (3-component vector) at t (scalar) depends on x[neighbours] (3x3 tensor) at t
+a[i] = sum((x[neighbour] - x[i]) * dt)
+x[neighbours] at t is changing at a rate of v[neighbours] (3x3 tensor)
+therefore the rate of change of x[i] is dependent on the rate of change of x[neighbours]
+the curvature of v[i] over dt is given by v[neighbours] - if v[neighbours] is positive, a[i] is increasing, 
+    so v[i] has positive curvature
+we can estimate x[i] at t+1 by using the rate of change of v[neighbours] to calculate the rate of change of v[i]
+a[i] changes as (x[neighbour] + v[neighbour]) - (x[i] + v[i])
+*/

@@ -1,0 +1,79 @@
+    O 
+    |
+    |l
+    |
+    O
+   /|
+ l/ |b
+ /  |
+O   v
+<--->
+  a
+
+l = a** + b**
+
+if a == 3 and b == 4:
+    l == 5
+
+   0  3  6  9  12 15
+0  o     o     o
+
+
+5  o     o     o
+
+
+9     o     o     o
+
+
+14    o     o     o
+
+
+18 o     o     o
+
+
+23 o     o     o
+
+
+27    o     o     o
+
+
+32    o     o     o
+
+
+36 o     o     o
+
+col = idx//width
+is_indented = (col%4)//2
+x = ((idx%width)+is_indented)*3
+y = 
+
+do unindented pairs of rows 
+
+  8
+<---->
+o    o    o ^
+            | 5
+o    o    o v
+... (13 row gap)
+
+then indented pairs of rows
+
+    8
+  <---->
+  o    o    o
+3>
+  o    o    o
+... (13 row gap)
+
+blocks of four sprites at once?
+o
+
+
+o
+
+
+   o
+
+
+
+   o

@@ -1,0 +1,59 @@
+#version 430
+
+layout (local_size_x = 8, local_size_y = 4) in;
+uniform float osg_FrameTime;
+uniform float osg_DeltaFrameTime;
+uniform uint num_sprites;
+
+const float TAU = 6.2831853;
+
+#define go_fwd sprites[sprite_id].pos += vec3(-sin(sprites[sprite_id].facing.x), 
+                                            cos(sprites[sprite_id].facing.z),    
+                                            sin(sprites[sprite_id].facing.z))    \
+                                                            *osg_DeltaFrameTime
+#define go_back sprites[sprite_id].pos -= vec3(-sin(sprites[sprite_id].facing.x),cos(sprites[sprite_id].facing.z),sin(sprites[sprite_id].facing.z))*osg_DeltaFrameTime
+
+#define turn_left sprites[sprite_id].facing.z = mod(sprites[sprite_id].facing.z + 1., 360.)
+#define turn_right sprites[sprite_id].facing.z = mod(sprites[sprite_id].facing.z - 1., 360.)
+
+#define turn_up sprites[sprite_id].facing.x = mod(sprites[sprite_id].facing.x + 1., 360.)
+#define turn_down sprites[sprite_id].facing.x = mod(sprites[sprite_id].facing.x - 1., 360.)
+
+#define roll_ccw sprites[sprite_id].facing.x = mod(sprites[sprite_id].facing.y + 1., 360.)
+#define roll_cw sprites[sprite_id].facing.x = mod(sprites[sprite_id].facing.y - 1., 360.)
+
+struct Sprite_data {
+    vec3 pos;           // 16B
+    vec4 facing;        // 16B
+    // ^ quaternion representing rotation of object
+};
+
+layout (std430, binding = 0) buffer sprite_buff {
+    Sprite_data sprites[];
+};
+
+void main() {
+    uint sprite_id = gl_GlobalInvocationID.x + 4 * gl_GlobalInvocationID.y;
+
+    if (sprites[sprite_id].pos.y > 20.) go_fwd;
+    else go_back;
+    if (sin(osg_FrameTime + float(sprite_id)) > .9) {
+        if (sprite_id < 100) {
+            turn_up;
+        }
+        turn_left;
+        
+        if (sprite_id > 800) {
+            roll_cw;
+        }
+    } else {
+        if (sprite_id < 100) {
+            turn_down;
+        }
+        roll_ccw;
+        
+        if (sprite_id > 800) {
+            turn_right;
+        }
+    }
+}
