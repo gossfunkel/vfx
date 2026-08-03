@@ -2,13 +2,13 @@ from direct.showbase.ShowBase import ShowBase
 from direct.filter.FilterManager import FilterManager
 from panda3d.core import (
     load_prc_file_data, NodePath, Vec3, GeomNode, Geom, GeomEnums, ModelRoot,
-    GeomVertexFormat, GeomVertexData, GeomVertexWriter, GeomTriangles, 
+    GeomVertexFormat, GeomVertexData, GeomVertexWriter, GeomTriangles, GeomLines,
     BoundingVolume, BoundingBox, ComputeNode, ColorBlendAttrib, CardMaker,
     Shader, ShaderBuffer, Texture, SamplerState, ShaderAttrib
 )
 import numpy as np
 
-NUM_SPRITES = 8192
+NUM_SPRITES = 512
 
 CONFIG = """
 win-size 1920 1040
@@ -24,14 +24,13 @@ if __name__ == "__main__":
     ShowBase()
     base.set_background_color(0.,0.,0.,1.)
 
-    row_len = 64
+    row_len = 16
 
     raw_ssbo_data = np.zeros(4*NUM_SPRITES, dtype=np.float32)
     for idx in range(NUM_SPRITES):
         raw_ssbo_data[idx*4] = row_len                 # x
-        raw_ssbo_data[idx*4+1] = row_len               # y
-        #raw_ssbo_data[idx*4+2] =  .3 + .2 * np.sin(idx)    # z
-        raw_ssbo_data[idx*4+2] = idx                     # z
+        raw_ssbo_data[idx*4+1] = idx%(NUM_SPRITES//2)               # y
+        raw_ssbo_data[idx*4+2] = row_len                     # z
 
     ssbo = ShaderBuffer('sprites', raw_ssbo_data.tobytes(), GeomEnums.UHStatic)
 
@@ -41,26 +40,47 @@ if __name__ == "__main__":
     geom_tris = GeomTriangles(GeomEnums.UH_static)
     geom_tris.add_next_vertices(NUM_SPRITES * 3)
 
-    geom = Geom(vtx_data)
-    geom.add_primitive(geom_tris)
-    geom.set_bounds(BoundingBox((-1, -1, -1), (100, 100, 100)))
+    geom_lines = GeomLines(GeomEnums.UH_static)
+    for idx in range(NUM_SPRITES//2):
+        geom_lines.add_vertex(idx)
+        geom_lines.add_vertex(NUM_SPRITES//2 + idx)
 
-    geom_node = GeomNode("gnode")
-    geom_node.add_geom(geom)
+    tri_geom = Geom(vtx_data)
+    tri_geom.add_primitive(geom_tris)
+    tri_geom.set_bounds(BoundingBox((-1, -1, -1), (100, 100, 100)))
+
+    tri_geom_node = GeomNode("tri_gnode")
+    tri_geom_node.add_geom(tri_geom)
+
+    line_geom = Geom(vtx_data)
+    line_geom.add_primitive(geom_lines)
+    line_geom.set_bounds(BoundingBox((-1, -1, -1), (100, 100, 100)))
+
+    line_geom_node = GeomNode("line_gnode")
+    line_geom_node.add_geom(line_geom)
 
     sprite_tex = loader.load_texture("grid_sprite.png")
     sprite_tex.wrap_u = SamplerState.WM_clamp
     sprite_tex.wrap_v = SamplerState.WM_clamp
 
     pt_shader = Shader.load(Shader.SL_GLSL, "points_helix.vert", "points_helix.frag")
-    pt_np = base.render.attach_new_node(geom_node)
+    pt_np = base.render.attach_new_node(tri_geom_node)
     pt_np.set_shader(pt_shader)
+    pt_np.set_shader_input("num_sprites", NUM_SPRITES)
     pt_np.set_shader_input("vert_buff", ssbo)
     pt_np.set_texture(sprite_tex)
     pt_np.set_two_sided(True)
     pt_np.set_attrib(ColorBlendAttrib.make(ColorBlendAttrib.M_add, ColorBlendAttrib.O_incoming_alpha, ColorBlendAttrib.O_one))
     pt_np.set_depth_write(False)
     pt_np.node().set_bounds_type(BoundingVolume.BT_box)
+
+    line_shader = Shader.load(Shader.SL_GLSL, "lines_helix.vert", "lines_helix.frag")
+    line_np = base.render.attach_new_node(line_geom_node)
+    line_np.set_shader(line_shader)
+    line_np.set_shader_input("vert_buff", ssbo)
+    line_np.set_two_sided(True)
+    line_np.set_depth_write(False)
+    line_np.node().set_bounds_type(BoundingVolume.BT_box)
 
     # compute_node = ComputeNode("compute")
     # compute_node.add_dispatch(NUM_VERTS // 64, 4, 1)
@@ -88,14 +108,15 @@ if __name__ == "__main__":
     base.accept("escape", base.userExit)
     
     def rotate_cam(task):
-        base.cam.set_pos(np.sin(2.*np.pi/3.+task.frame/200.)*(row_len/2.) + (row_len/2.),
-            -np.cos(2.*np.pi/3.+task.frame/400.)*((NUM_SPRITES//row_len)//2.) + 40.,np.cos(task.frame/800.)*3. + 2.)
-        base.cam.look_at((row_len/2., (NUM_SPRITES//row_len)//2., 0.))
+        base.cam.set_pos(np.sin(task.frame/200.)*(NUM_SPRITES/2.) + (NUM_SPRITES/2.),
+            -np.cos(task.frame/200.)*(NUM_SPRITES/2.) + (NUM_SPRITES/2.),
+            np.cos(task.frame/800.)*row_len + 1.)
+        base.cam.look_at((row_len/2., NUM_SPRITES/4.,row_len/2.))
         return task.cont
 
-    #base.taskMgr.add(rotate_cam, "rotate-camera")
+    base.taskMgr.add(rotate_cam, "rotate-camera")
 
-    base.cam.set_pos(row_len/2., -8., 1.)
-    base.cam.look_at(row_len/2., (NUM_SPRITES//row_len)//2., 0.)
+    base.cam.set_pos(row_len/2., -32., row_len/2. + 1.)
+    base.cam.look_at(row_len/2., 0., row_len/2.)
 
     base.run()
