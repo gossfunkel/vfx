@@ -1,6 +1,6 @@
 #version 430
 
-const float TAU = 6.2831853;
+#include "sprite_def.glsl"
 
 uniform mat4 p3d_ModelViewMatrix;
 uniform mat4 p3d_ProjectionMatrix;
@@ -13,7 +13,7 @@ in uint num_sprites;
 uniform float osg_FrameTime;
 
 layout (std430, binding = 0) readonly buffer vert_buff {
-    vec3 pos[];
+    Sprite sprites[];
 };
 
 out vec2 texcoord;
@@ -27,7 +27,7 @@ void main() {
                                            pos[sprite_idx].y,
                                            (.5 + cos(TAU * float(sprite_idx)/float(num_sprites) + osg_FrameTime)*.5)*pos[sprite_idx].z, 
                                            1.); */
-    vec4 posn = vec4(pos[sprite_idx].xyz, 1.);
+    vec4 posn = vec4(sprites[sprite_idx].pos.xyz, 1.);
 
     col = p3d_Color * vec4(posn.y/255.,1.-posn.y/127.5,1.-posn.y/255.,1.);
     posn = p3d_ModelViewMatrix * posn;

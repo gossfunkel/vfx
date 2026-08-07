@@ -1,6 +1,6 @@
 #version 430
 
-const float TAU = 6.2831853;
+#include "sprite_def.glsl"
 
 layout (local_size_x = 4, local_size_y = 4) in;
 
@@ -8,24 +8,31 @@ layout (local_size_x = 4, local_size_y = 4) in;
 uniform float osg_DeltaFrameTime;
 uniform uint num_sprites;
 
-layout (std430, binding = 0) readonly buffer vert_buff_in {
-    vec3 pos_in[];
+layout (std430, binding = 0) readonly buffer sprite_buff_in {
+    Sprite sprites_in[];
 };
 
-layout (std430, binding = 0) writeonly buffer vert_buff_out {
-    vec3 pos_out[];
+layout (std430, binding = 1) buffer sprite_buff_out {
+    Sprite sprites_out[];
 };
 
 void main() {
     uint vtx_id = 16 * gl_GlobalInvocationID.x + gl_GlobalInvocationID.y;
-    pos_out[vtx_id] = pos_in[vtx_id];
+    //pos_out[vtx_id] = pos_in[vtx_id];
+
+    // damping factor on inertia
+    sprites_out[vtx_id].vel = sprites_in[vtx_id].vel * .9;
 
     // TODO spacial partitioning
     for (uint idx = 0; idx < num_sprites; idx++) {
         if (idx == vtx_id) continue;
-        vec3 diffPos = abs(pos_in[vtx_id] - pos_in[idx]);
+        // push away when too close
+        vec3 diffPos = abs(sprites_in[vtx_id].pos - sprites_in[idx].pos);
         if (diffPos.x < .5 && diffPos.y < .5 && diffPos.z < .5) {
-            pos_out[vtx_id] += diffPos * osg_DeltaFrameTime;
+            //pos_out[vtx_id] += diffPos * osg_DeltaFrameTime;
+            sprites_out[vtx_id].vel += diffPos * osg_DeltaFrameTime;
         }
     }
+    // position update
+    sprites_out[vtx_id].pos = sprites_in[vtx_id].pos + sprites_out[vtx_id].vel * osg_DeltaFrameTime;
 }

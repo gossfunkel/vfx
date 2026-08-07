@@ -31,11 +31,12 @@ if __name__ == "__main__":
     bin_mgr.add_bin("phys_bin", CullBinManager.BT_fixed, 10)
     bin_mgr.add_bin('copy_bin', CullBinManager.BT_fixed, 30)
 
-    raw_ssbo_data = np.zeros(4*NUM_SPRITES, dtype=np.float32)
+    spr_struct_floats = 8 # pos, vel
+    raw_ssbo_data = np.zeros(spr_struct_floats*NUM_SPRITES, dtype=np.float32)
     for sprite_idx in range(NUM_SPRITES):
-        raw_ssbo_data[sprite_idx*4] = rng.random()
-        raw_ssbo_data[sprite_idx*4+1] = rng.random()
-        raw_ssbo_data[sprite_idx*4+2] = rng.random()
+        raw_ssbo_data[sprite_idx*spr_struct_floats] = rng.random()
+        raw_ssbo_data[sprite_idx*spr_struct_floats+1] = rng.random()
+        raw_ssbo_data[sprite_idx*spr_struct_floats+2] = rng.random()
 
     ssbo_A = ShaderBuffer('sprites_in', raw_ssbo_data.tobytes(), GeomEnums.UHStatic)
     ssbo_B = ShaderBuffer('sprites_out', raw_ssbo_data.tobytes(), GeomEnums.UHStatic)
@@ -72,8 +73,8 @@ if __name__ == "__main__":
     phys_comp.add_dispatch(NUM_SPRITES // 64, 4, 1)
     phys_np = base.render.attach_new_node(phys_comp)
     phys_np.set_shader(Shader.load_compute(Shader.SL_GLSL, "spawn_sprite.comp"))
-    phys_np.set_shader_input("vert_buff_in", ssbo_A)
-    phys_np.set_shader_input("vert_buff_out", ssbo_B)
+    phys_np.set_shader_input("sprite_buff_in", ssbo_A)
+    phys_np.set_shader_input("sprite_buff_out", ssbo_B)
     phys_np.set_shader_input("num_sprites", NUM_SPRITES)
     phys_np.set_bin('phys_bin', 15)
 
@@ -81,8 +82,8 @@ if __name__ == "__main__":
     copy_node.add_dispatch(NUM_SPRITES // 64, 4, 1)
     copy_np = base.render.attach_new_node(copy_node)
     copy_np.set_shader(Shader.load_compute(Shader.SL_GLSL, "copy.comp"))
-    copy_np.set_shader_input("vert_buff_in", ssbo_B)
-    copy_np.set_shader_input("vert_buff_out", ssbo_A)
+    copy_np.set_shader_input("sprite_buff_in", ssbo_B)
+    copy_np.set_shader_input("sprite_buff_out", ssbo_A)
     copy_np.set_shader_input("num_sprites", NUM_SPRITES)
     copy_np.set_bin('copy_bin', 35)
 
