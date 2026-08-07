@@ -1,0 +1,31 @@
+#version 430
+
+const float TAU = 6.2831853;
+
+layout (local_size_x = 4, local_size_y = 4) in;
+
+//uniform float osg_FrameTime;
+uniform float osg_DeltaFrameTime;
+uniform uint num_sprites;
+
+layout (std430, binding = 0) readonly buffer vert_buff_in {
+    vec3 pos_in[];
+};
+
+layout (std430, binding = 0) writeonly buffer vert_buff_out {
+    vec3 pos_out[];
+};
+
+void main() {
+    uint vtx_id = 16 * gl_GlobalInvocationID.x + gl_GlobalInvocationID.y;
+    pos_out[vtx_id] = pos_in[vtx_id];
+
+    // TODO spacial partitioning
+    for (uint idx = 0; idx < num_sprites; idx++) {
+        if (idx == vtx_id) continue;
+        vec3 diffPos = abs(pos_in[vtx_id] - pos_in[idx]);
+        if (diffPos.x < .5 && diffPos.y < .5 && diffPos.z < .5) {
+            pos_out[vtx_id] += diffPos * osg_DeltaFrameTime;
+        }
+    }
+}

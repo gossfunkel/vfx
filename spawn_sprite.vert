@@ -12,7 +12,7 @@ in uint num_sprites;
 //uniform uint num_verts;
 uniform float osg_FrameTime;
 
-layout (std430, binding = 0) buffer vert_buff {
+layout (std430, binding = 0) readonly buffer vert_buff {
     vec3 pos[];
 };
 
@@ -28,14 +28,6 @@ void main() {
                                            (.5 + cos(TAU * float(sprite_idx)/float(num_sprites) + osg_FrameTime)*.5)*pos[sprite_idx].z, 
                                            1.); */
     vec4 posn = vec4(pos[sprite_idx].xyz, 1.);
-    posn.y = mod(posn.y + osg_FrameTime, 255.);
-    if (sprite_idx >= 256) {
-        posn.x *= .5 + sin(TAU*pos[sprite_idx].y/255. + osg_FrameTime/2. + TAU*.5)*.5;
-        posn.z *= .5 + cos(TAU*pos[sprite_idx].y/255. + osg_FrameTime/2. + TAU*.5)*.5;
-    } else {
-        posn.x *= .5 + sin(TAU*pos[sprite_idx].y/255. + osg_FrameTime/2.)*.5;
-        posn.z *= .5 + cos(TAU*pos[sprite_idx].y/255. + osg_FrameTime/2.)*.5;
-    }
 
     col = p3d_Color * vec4(posn.y/255.,1.-posn.y/127.5,1.-posn.y/255.,1.);
     posn = p3d_ModelViewMatrix * posn;

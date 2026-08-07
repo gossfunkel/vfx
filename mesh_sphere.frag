@@ -10,6 +10,7 @@ layout (std430, binding = 0) buffer vert_buff {
 out vec4 p3d_FragColor;
 
 void main() {
-    // TODO differential calculation of normals from vtx pos data
+    // TODO calculation of normals from vtx pos data
+    // TODO shadow mapped shading
     p3d_FragColor = vertex_col;
 }
