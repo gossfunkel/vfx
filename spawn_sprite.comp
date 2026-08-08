@@ -16,22 +16,37 @@ layout (std430, binding = 1) buffer sprite_buff_out {
     Sprite sprites_out[];
 };
 
+layout (std430, binding = 2) buffer cell_buff {
+    Cell cells[];
+};
+
 void main() {
-    uint vtx_id = 16 * gl_GlobalInvocationID.x + gl_GlobalInvocationID.y;
+    uint g_id = 16 * gl_GlobalInvocationID.x + gl_GlobalInvocationID.y;
     //pos_out[vtx_id] = pos_in[vtx_id];
 
-    // damping factor on inertia
-    sprites_out[vtx_id].vel = sprites_in[vtx_id].vel * .9;
+    Cell invcell = cells[g_id];
 
-    // TODO spacial partitioning
-    for (uint idx = 0; idx < num_sprites; idx++) {
-        if (idx == vtx_id) continue;
+    for (uint oth_cell = 0; oth_cell < num_cells; oth_cell++) {
+        if (oth_cell == g_id) continue;
+        // TODO calculate forces between cells
         // push away when too close
-        vec3 diffPos = abs(sprites_in[vtx_id].pos - sprites_in[idx].pos);
-        if (diffPos.x < .5 && diffPos.y < .5 && diffPos.z < .5) {
+        vec3 diffPos = invcell.pos - oth_cell.pos;
+        if (abs(diffPos.x) < .5 && abs(diffPos.y) < .5 && abs(diffPos.z) < .5) {
             //pos_out[vtx_id] += diffPos * osg_DeltaFrameTime;
             sprites_out[vtx_id].vel += diffPos * osg_DeltaFrameTime;
         }
+    }
+
+    for (uint idx = 0; idx < invcell.num_sprites; idx++) {
+        Sprite curr_spr_in = sprites_in[invcell.sprites[idx]];
+        Sprite curr_spr_out = sprites_out[invcell.sprites[idx]];
+
+        // damping factor on inertia
+        curr_spr_out.vel = curr_spr_in.vel * .9;
+
+    
+        
+        
     }
     // position update
     sprites_out[vtx_id].pos = sprites_in[vtx_id].pos + sprites_out[vtx_id].vel * osg_DeltaFrameTime;

@@ -1,0 +1,29 @@
+#version 430
+
+#include "sprite_def.glsl"
+
+layout (local_size_x = 4, local_size_y = 4) in;
+
+//uniform float osg_FrameTime;
+uniform float osg_DeltaFrameTime;
+uniform uint num_sprites;
+
+layout (std430, binding = 0) readonly buffer sprite_buff_in {
+    Sprite sprites_in[];
+};
+
+layout (std430, binding = 1) buffer sprite_buff_out {
+    Sprite sprites_out[];
+};
+
+void main() {
+    uint vtx_id = 16 * gl_GlobalInvocationID.x + gl_GlobalInvocationID.y;
+
+    // TODO calculate forces for each pair of buckets
+
+    // position update
+    for (uint spr = 0; spr < cell_sprites; spr++) {
+        sprites_out[spr].pos = sprites_in[spr].pos + sprites_out[spr].vel * osg_DeltaFrameTime;
+    }
+    
+}

@@ -1,0 +1,64 @@
+#version 430
+
+#include "sprite_def.glsl"
+
+layout (local_size_x = 4, local_size_y = 4) in;
+
+uniform uint num_sprites;
+uniform float res;
+
+layout (std430, binding = 0) readonly buffer sprite_buff_in {
+    Sprite sprites_in[];
+};
+
+layout (std430, binding = 1) buffer cell_buff {
+    Cell cells[];
+};
+
+void main() {
+    uint vtx_id = 16 * gl_GlobalInvocationID.x + gl_GlobalInvocationID.y;
+
+    ivec3 m_id = ivec3(int(sprites_in[vtx_id].pos.x),
+                       int(sprites_in[vtx_id].pos.y),
+                       int(sprites_in[vtx_id].pos.z));
+    // merton encoding - max area size 1024*1024*1024 (2**10)
+    // 1073741824 cells, 
+    uint qkey = m_id.x & 0b00000000000000000000000000000001
+              | m_id.y << 1  & 0b00000000000000000000000000000010
+              | m_id.z << 2  & 0b00000000000000000000000000000100
+              | m_id.x << 2  & 0b00000000000000000000000000001000
+              | m_id.y << 3  & 0b00000000000000000000000000010000
+              | m_id.z << 4  & 0b00000000000000000000000000100000
+              | m_id.x << 4  & 0b00000000000000000000000001000000
+              | m_id.y << 5  & 0b00000000000000000000000010000000
+              | m_id.z << 6  & 0b00000000000000000000000100000000
+              | m_id.x << 6  & 0b00000000000000000000001000000000
+              | m_id.y << 7  & 0b00000000000000000000010000000000
+              | m_id.z << 8  & 0b00000000000000000000100000000000
+              | m_id.x << 8  & 0b00000000000000000001000000000000
+              | m_id.y << 9  & 0b00000000000000000010000000000000
+              | m_id.z << 10 & 0b00000000000000000100000000000000
+              | m_id.x << 10 & 0b00000000000000001000000000000000
+              | m_id.y << 11 & 0b00000000000000010000000000000000
+              | m_id.z << 12 & 0b00000000000000100000000000000000
+              | m_id.x << 12 & 0b00000000000001000000000000000000
+              | m_id.y << 13 & 0b00000000000010000000000000000000
+              | m_id.z << 14 & 0b00000000000100000000000000000000
+              | m_id.x << 14 & 0b00000000001000000000000000000000
+              | m_id.y << 15 & 0b00000000010000000000000000000000
+              | m_id.z << 16 & 0b00000000100000000000000000000000
+              | m_id.x << 16 & 0b00000001000000000000000000000000
+              | m_id.y << 17 & 0b00000010000000000000000000000000
+              | m_id.z << 18 & 0b00000100000000000000000000000000
+              | m_id.x << 18 & 0b00001000000000000000000000000000
+              | m_id.y << 19 & 0b00010000000000000000000000000000
+              | m_id.z << 20 & 0b00100000000000000000000000000000;
+
+    cells[qkey].sprites[cells[qkey].num_sprites] = vtx_id;
+    cells[qkey].num_sprites++;
+
+    //sprites[vtx_id].hash = mod(sprites[vtx_id].pos.x + 
+    //                       sprites[vtx_id].pos.y * res + 
+    //                       sprites[vtx_id].pos.z * res * res, res*res*res);
+
+}

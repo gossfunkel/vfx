@@ -6,19 +6,25 @@ layout (local_size_x = 4, local_size_y = 4) in;
 
 uniform uint num_sprites;
 
-layout (std430, binding = 0) readonly buffer sprite_buff_in {
-    Sprite sprites_in[];
-};
-
-layout (std430, binding = 1) writeonly buffer sprite_buff_out {
+layout (std430, binding = 0) readonly buffer sprite_buff_B {
     Sprite sprites_out[];
 };
 
-void main() {
-    uint vtx_id = 16 * gl_GlobalInvocationID.x + gl_GlobalInvocationID.y;
+layout (std430, binding = 1) writeonly buffer sprite_buff_A {
+    Sprite sprites_in[];
+};
 
-    if (vtx_id < num_sprites) {
-        sprites_out[vtx_id].pos = sprites_in[vtx_id].pos;
-        sprites_out[vtx_id].vel = sprites_in[vtx_id].vel;
+layout (std430, binding = 2) buffer cell_buff {
+    Cell cells[];
+};
+
+void main() {
+    uint g_id = 16 * gl_GlobalInvocationID.x + gl_GlobalInvocationID.y;
+
+    if (g_id < num_sprites) {
+        sprites_in[g_id].pos = sprites_out[g_id].pos;
+        sprites_in[g_id].vel = sprites_out[g_id].vel;
     }
+
+    cells[g_id].num_sprites = 0;
 }

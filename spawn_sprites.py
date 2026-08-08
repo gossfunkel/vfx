@@ -9,6 +9,9 @@ from panda3d.core import (
 import numpy as np
 
 NUM_SPRITES = 256
+# Merton codes indexing 2**10 cells per dimension
+NUM_CELLS = ((2**10)*3)
+resolution  = 100.
 
 CONFIG = """
 win-size 1920 1040
@@ -28,18 +31,27 @@ if __name__ == "__main__":
     base.set_background_color(0.,0.,0.,1.)
 
     bin_mgr = CullBinManager.get_global_ptr()
-    bin_mgr.add_bin("phys_bin", CullBinManager.BT_fixed, 10)
+    bin_mgr.add_bin("hash_bin", CullBinManager.BT_fixed, 10)
+    bin_mgr.add_bin("phys_bin", CullBinManager.BT_fixed, 20)
     bin_mgr.add_bin('copy_bin', CullBinManager.BT_fixed, 30)
 
     spr_struct_floats = 8 # pos, vel
     raw_ssbo_data = np.zeros(spr_struct_floats*NUM_SPRITES, dtype=np.float32)
     for sprite_idx in range(NUM_SPRITES):
-        raw_ssbo_data[sprite_idx*spr_struct_floats] = rng.random()
-        raw_ssbo_data[sprite_idx*spr_struct_floats+1] = rng.random()
-        raw_ssbo_data[sprite_idx*spr_struct_floats+2] = rng.random()
+        raw_ssbo_data[sprite_idx*spr_struct_floats] = rng.random() - .5
+        raw_ssbo_data[sprite_idx*spr_struct_floats+1] = rng.random() - .5
+        raw_ssbo_data[sprite_idx*spr_struct_floats+2] = rng.random() - .5
 
-    ssbo_A = ShaderBuffer('sprites_in', raw_ssbo_data.tobytes(), GeomEnums.UHStatic)
-    ssbo_B = ShaderBuffer('sprites_out', raw_ssbo_data.tobytes(), GeomEnums.UHStatic)
+    ssbo_A = ShaderBuffer('sprites_A', raw_ssbo_data.tobytes(), GeomEnums.UHStatic) # TODO dynamic?
+    ssbo_B = ShaderBuffer('sprites_B', raw_ssbo_data.tobytes(), GeomEnums.UHStatic)
+
+    # TODO properly format struct with cell positions
+    raw_cell_data = np.zeros(8*NUM_CELLS, dtype=np.float32)
+    for cell in range(NUM_CELLS):
+        raw_cell_data[cell*8] = cell+.5
+        raw_cell_data[cell*8+1] = cell+.5
+        raw_cell_data[cell*8+2] = cell+.5
+    ssbo_cells = ShaderBuffer('cells', raw_cell_data.tobytes(), GeomEnums.UHStatic)
 
     vtx_format = GeomVertexFormat.get_empty()
     vtx_data = GeomVertexData('sprites', vtx_format, GeomEnums.UH_static)
@@ -69,21 +81,36 @@ if __name__ == "__main__":
     spr_np.set_depth_write(False)
     spr_np.node().set_bounds_type(BoundingVolume.BT_box)
 
+    # layout of 4x4 invocations, blocs 4 dispatches wide
+    INV_BLOCS = 4*4*4
+
+    hash_node = ComputeNode("space_hash")
+    hash_node.add_dispatch(NUM_SPRITES // INV_BLOCS, 4, 1)
+    hash_np = base.render.attach_new_node(hash_node)
+    hash_np.set_shader(Shader.load_compute(Shader.SL_GLSL, "hash.comp"))
+    hash_np.set_shader_input("sprite_buff", ssbo_A)
+    hash_np.set_shader_input("cell_buff", ssbo_cells)
+    hash_np.set_shader_input("num_sprites", NUM_SPRITES)
+    hash_np.set_shader_input("res", resolution)
+    hash_np.set_bin('hash_bin', 15)
+
     phys_comp = ComputeNode("compute")
-    phys_comp.add_dispatch(NUM_SPRITES // 64, 4, 1)
+    phys_comp.add_dispatch(NUM_SPRITES // INV_BLOCS, 4, 1)
     phys_np = base.render.attach_new_node(phys_comp)
     phys_np.set_shader(Shader.load_compute(Shader.SL_GLSL, "spawn_sprite.comp"))
     phys_np.set_shader_input("sprite_buff_in", ssbo_A)
     phys_np.set_shader_input("sprite_buff_out", ssbo_B)
+    phys_np.set_shader_input("cell_buff", ssbo_cells)
     phys_np.set_shader_input("num_sprites", NUM_SPRITES)
-    phys_np.set_bin('phys_bin', 15)
+    phys_np.set_bin('phys_bin', 25)
 
     copy_node = ComputeNode("bcopy")
-    copy_node.add_dispatch(NUM_SPRITES // 64, 4, 1)
+    copy_node.add_dispatch(NUM_SPRITES // INV_BLOCS, 4, 1)
     copy_np = base.render.attach_new_node(copy_node)
     copy_np.set_shader(Shader.load_compute(Shader.SL_GLSL, "copy.comp"))
-    copy_np.set_shader_input("sprite_buff_in", ssbo_B)
-    copy_np.set_shader_input("sprite_buff_out", ssbo_A)
+    copy_np.set_shader_input("sprite_buff_B", ssbo_B)
+    copy_np.set_shader_input("sprite_buff_A", ssbo_A)
+    phys_np.set_shader_input("cell_buff", ssbo_cells)
     copy_np.set_shader_input("num_sprites", NUM_SPRITES)
     copy_np.set_bin('copy_bin', 35)
 
@@ -106,15 +133,15 @@ if __name__ == "__main__":
     base.accept("escape", base.userExit)
     
     def rotate_cam(task):
-        base.cam.set_pos(np.sin(task.frame/400.)*(NUM_SPRITES/2.) + (NUM_SPRITES/4.),
-            -np.cos(task.frame/400.)*(NUM_SPRITES/2.) + (NUM_SPRITES/4.),
-            np.cos(task.frame/800.)*row_len + 1.)
-        base.cam.look_at((row_len/2., NUM_SPRITES/4.,row_len/2.))
+        base.cam.set_pos(np.sin(task.frame/400.)*64.,
+            -np.cos(task.frame/400.)*64.,
+            np.cos(task.frame/800.)*16. + 8.)
+        base.cam.look_at((0., 0., 0.))
         return task.cont
 
-    #base.taskMgr.add(rotate_cam, "rotate-camera")
+    base.taskMgr.add(rotate_cam, "rotate-camera")
 
-    base.cam.set_pos(16., -32., 32.)
-    base.cam.look_at(16., 16., 16.)
+    base.cam.set_pos(0., -64., 16.)
+    base.cam.look_at(0., 0., 0.)
 
     base.run()
