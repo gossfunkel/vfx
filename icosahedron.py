@@ -84,7 +84,7 @@ if __name__ == "__main__":
     mesh_np.set_shader_input("num_verts", num_verts)
     mesh_np.set_two_sided(True)
     mesh_np.set_attrib(ColorBlendAttrib.make(ColorBlendAttrib.M_add, ColorBlendAttrib.O_incoming_alpha, ColorBlendAttrib.O_one))
-    mesh_np.set_depth_write(False)
+    mesh_np.set_depth_write(True)
     #mesh_np.set_depth_offset(1)
     mesh_np.node().set_bounds_type(BoundingVolume.BT_box)
 
