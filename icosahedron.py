@@ -43,23 +43,31 @@ if __name__ == "__main__":
 
     #num_tris = (num_sectors-2)*2*(num_stacks-2) + num_stacks*2
     geom_tris = GeomTriangles(GeomEnums.UH_static)
-    for vtx_set in range(3):
-        next_set = (vtx_set+1)%3
-        prev_set = (vtx_set+2)%3
-        geom_tris.add_vertex(vtx_set*4)
-        geom_tris.add_vertex(next_set*4 + 1)
-        geom_tris.add_vertex(next_set*4)
-        geom_tris.add_vertex(vtx_set*4)
-        geom_tris.add_vertex(vtx_set*4+1)
-        geom_tris.add_vertex(prev_set*4)
-        geom_tris.add_vertex(vtx_set*4)
-        geom_tris.add_vertex(prev_set*4+2)
-        geom_tris.add_vertex(vtx_set*4+1)
-        geom_tris.add_vertex(vtx_set*4+1)
-        geom_tris.add_vertex(next_set*4+2)
-        geom_tris.add_vertex(next_set*4+3)
-        # geom_tris.add_vertex((((vtx_set+1)*4)%num_verts)+2)
-        # geom_tris.add_vertex((((vtx_set+1)*4)%num_verts)+3)
+    geom_tris.add_vertices(0,2,5)
+    geom_tris.add_vertices(0,2,4)
+    geom_tris.add_vertices(0,8,4)
+    geom_tris.add_vertices(0,8,10)
+    geom_tris.add_vertices(1,8,10)
+    geom_tris.add_vertices(1,7,10)
+    geom_tris.add_vertices(2,9,11)
+    geom_tris.add_vertices(2,9,4)
+    geom_tris.add_vertices(3,1,6)
+    geom_tris.add_vertices(3,1,7)
+    geom_tris.add_vertices(3,6,9)
+    geom_tris.add_vertices(3,11,9)
+    geom_tris.add_vertices(4,9,6)
+    geom_tris.add_vertices(4,8,6)
+    geom_tris.add_vertices(6,1,8)
+    geom_tris.add_vertices(10,7,5)
+    geom_tris.add_vertices(11,7,5)
+    geom_tris.add_vertices(11,7,3)
+    geom_tris.add_vertices(11,2,5)
+    geom_tris.add_vertices(10,0,5)
+    # geom_tris.add_vertices(2,1,3)
+    #geom_tris.add_vertices(4,5,6)
+    # geom_tris.add_vertices(6,5,7)
+    #geom_tris.add_vertices(8,9,10)
+    # geom_tris.add_vertices(10,9,11)
     geom_tris.close_primitive()
 
     geom = Geom(vtx_data)
@@ -77,7 +85,7 @@ if __name__ == "__main__":
     mesh_np.set_two_sided(True)
     mesh_np.set_attrib(ColorBlendAttrib.make(ColorBlendAttrib.M_add, ColorBlendAttrib.O_incoming_alpha, ColorBlendAttrib.O_one))
     mesh_np.set_depth_write(False)
-    #mesh_np.set_depth_offset(3)
+    #mesh_np.set_depth_offset(1)
     mesh_np.node().set_bounds_type(BoundingVolume.BT_box)
 
     compute_node = ComputeNode("compute")
@@ -90,8 +98,8 @@ if __name__ == "__main__":
     base.accept("escape", base.userExit)
     
     def rotate_cam(task):
-        base.cam.set_pos(np.sin(task.frame/200.)*5.,
-            -np.cos(2.*np.pi+task.frame/200.)*5.,np.cos(task.frame/800.)*3. + 2.)
+        base.cam.set_pos(np.sin(task.frame/200.)*10.,
+            -np.cos(task.frame/200.)*10.,np.cos(task.frame/800.) + 1.)
         base.cam.look_at((0., 0., 0.))
         return task.cont
 

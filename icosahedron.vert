@@ -13,7 +13,8 @@ layout (std430, binding = 0) buffer vert_buff {
 };
 
 void main() {
-    vertex_col = p3d_Color;
+    float val = sin(float(gl_VertexID) + osg_FrameTime);
+    vertex_col = vec4(val,-val,gl_VertexID/12.,1.);
 
     gl_Position = p3d_ModelViewProjectionMatrix * vec4(pos[gl_VertexID], 1.);
 }

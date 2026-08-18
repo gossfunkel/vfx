@@ -10,5 +10,5 @@ layout (std430, binding = 0) buffer vert_buff {
 out vec4 p3d_FragColor;
 
 void main() {
-    p3d_FragColor = vec4(1.);
+    p3d_FragColor = vertex_col;
 }
