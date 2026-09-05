@@ -8,8 +8,9 @@
 #define SCREEN_WIDTH 800
 #define SCREEN_HEIGHT 800
 
-#define CELL_LENGTH 40
-#define VERT_SIZE 5
+#define CELL_LENGTH 80
+#define VERT_SIZE 6
+#define TICKS_PER_SEC 10.
 
 typedef struct {
     bool lit;
@@ -61,11 +62,17 @@ int main() {
     }
 
     double dt = 0.f;
+    double time = 0.f;
 
     while(!WindowShouldClose()) {
         dt = GetFrameTime();
 
-        nodes.at(GetRandomValue(0,nodes.size()-1)).lit = true;
+        if (floor(TICKS_PER_SEC * (time + dt)) > floor(TICKS_PER_SEC * time)) {
+            nodes.at(GetRandomValue(0,nodes.size()-1)).lit = true;
+            edges.at(GetRandomValue(0,edges.size()-1)).lit = true;
+        }
+
+        time += dt;
 
         for (std::vector<Node>::iterator node = nodes.begin(); node != nodes.end(); node++) {
             if (node->lit) {
@@ -76,8 +83,6 @@ int main() {
                 }
             }
         }
-
-        edges.at(GetRandomValue(0,edges.size()-1)).lit = true;
 
         for (std::vector<Edge>::iterator edge = edges.begin(); edge != edges.end(); edge++) {
             if (edge->lit) {
