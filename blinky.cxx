@@ -14,6 +14,7 @@
 typedef struct {
     bool lit;
     double time_on;
+    Color col;
     Vector2 pos;
 } Node;
 
@@ -36,6 +37,7 @@ int main() {
             nodes.emplace_back(
                 Node {
                     false, 0.f,
+                    Color{GetRandomValue(0,255),GetRandomValue(0,255),GetRandomValue(0,255),0},
                     Vector2{(float)col,(float)row}
                 }
             );
@@ -63,6 +65,18 @@ int main() {
     while(!WindowShouldClose()) {
         dt = GetFrameTime();
 
+        nodes.at(GetRandomValue(0,nodes.size()-1)).lit = true;
+
+        for (std::vector<Node>::iterator node = nodes.begin(); node != nodes.end(); node++) {
+            if (node->lit) {
+                node->time_on += dt;
+                if (node->time_on > 2.) {
+                    node->lit = false;
+                    node->time_on = 0.;
+                }
+            }
+        }
+
         edges.at(GetRandomValue(0,edges.size()-1)).lit = true;
 
         for (std::vector<Edge>::iterator edge = edges.begin(); edge != edges.end(); edge++) {
@@ -72,14 +86,17 @@ int main() {
                     edge->lit = false;
                     edge->time_on = 0.;
                 }
-            } 
+            }
         }
 
     	BeginDrawing();
     		ClearBackground(BLACK);
 
             for (auto node : nodes)
-                DrawCircleV(node.pos,VERT_SIZE,RED);
+                if (node.lit) {
+                    node.col.a = floor(255. * (std::min(node.time_on, 1.) - (std::max(1., node.time_on)-1.)));
+                    DrawCircleV(node.pos,VERT_SIZE,node.col);
+                }
 
             for (auto edge : edges) {
                 if (edge.lit) {
