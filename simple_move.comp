@@ -1,0 +1,22 @@
+#version 430
+
+layout (local_size_x = 4, local_size_y = 4) in;
+
+#include "simple_particle.glsl"
+
+uniform float osg_DeltaFrameTime;
+
+void main() {
+    uint p_id = 16 * gl_GlobalInvocationID.x + gl_GlobalInvocationID.y;
+
+    // sum forces and mirrored forces calculated by paired sprites
+    vec3 force = vec3(0.);
+    uint mirror_idx = (p_id+half_pairs)%num_sprites;
+    for (uint idx = 0; idx < half_pairs; idx++) {
+        force += f[p_id][idx];
+        force -= f[mirror_idx+idx][half_pairs-(idx+1)];
+    }
+
+    p[p_id].vel += force * osg_DeltaFrameTime;
+    //p[p_id].pos += p[p_id].vel * osg_DeltaFrameTime;
+}

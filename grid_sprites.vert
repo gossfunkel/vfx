@@ -26,7 +26,7 @@ void main() {
     //float size = sprites[sprite_idx].size * scale;
     if (corner_idx == 0) { // middle bottom
         //pos.y -= 0.15 * size;
-        pos.y -= .15 ;
+        pos.y -= .15;
         texcoord = vec2(.5, -.5);
     } else if (corner_idx == 1) { // top left
         //pos.x -= 0.15 * size;

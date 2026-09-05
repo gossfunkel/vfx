@@ -1,0 +1,24 @@
+#version 430
+
+layout (local_size_x = 4, local_size_y = 4) in;
+
+#include "particle_def.glsl"
+
+uniform float osg_DeltaFrameTime;
+
+void main() {
+    uint p_id = 16 * gl_GlobalInvocationID.x + gl_GlobalInvocationID.y;
+
+    uint c_id = find_cell_idx(p_id);
+
+    // calculate cell-based force on particle
+    p[p_id].vel += c[c_id].force * osg_DeltaFrameTime;
+
+    // calculate forces from cellmates
+    for (uint other_id = c[c_id].first; other_id <= c[c_id].members; other_id++) {
+        if (other_id == p_id) continue;
+        p[p_id].vel += G * c_a.mass * c_b.mass / dist_sq(p[other_id].pos - p[p_id].pos);
+    }
+    // update particle position
+    p[p_id].pos += p[p_id].vel * osg_DeltaFrameTime;
+}
