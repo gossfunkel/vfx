@@ -23,6 +23,7 @@ typedef struct {
 typedef struct {
     bool lit;
     double time_on;
+    Color col;
     Vector2 tip_a;
     Vector2 tip_b;
 } Edge;
@@ -48,14 +49,14 @@ int main() {
     for (auto node : nodes) {
         edges.emplace_back(
             Edge {
-                false, 0.f,
+                false, 0.f, WHITE,
                 Vector2Subtract(node.pos, Vector2{VERT_SIZE+2.f,0.f}),
                 Vector2Subtract(node.pos, Vector2{CELL_LENGTH-VERT_SIZE-2.f})
             }
         );
         edges.emplace_back(
             Edge {
-                false, 0.f,
+                false, 0.f, WHITE,
                 Vector2Subtract(node.pos, Vector2{0.f,VERT_SIZE+2.f}),
                 Vector2Subtract(node.pos, Vector2{0.f,CELL_LENGTH-VERT_SIZE-2.f})
             }
@@ -65,10 +66,10 @@ int main() {
     double dt = 0.f;
     double time = 0.f;
 
-    auto is_lit = [](Node node) { return node.lit; };
-    auto fade = [](Node node) {
-        node.col.a = floor(255. * (std::min(node.time_on, 1.) - (std::max(1., node.time_on)-1.)));
-        return node;
+    auto is_lit = [](auto i) { return i.lit; };
+    auto fade = [](auto i) {
+        i.col.a = floor(255. * (std::min(i.time_on, 1.) - (std::max(1., i.time_on)-1.)));
+        return i;
     };
 
     while(!WindowShouldClose()) {
@@ -107,12 +108,9 @@ int main() {
             for (auto node : nodes | std::views::filter(is_lit) | std::views::transform(fade))
                 DrawCircleV(node.pos,VERT_SIZE,node.col);
 
-            for (auto edge : edges) {
-                if (edge.lit) {
-                    int col_val = floor(255. * (std::min(edge.time_on, 1.) - (std::max(1., edge.time_on)-1.)));
-                    DrawLineV(edge.tip_a, edge.tip_b, Color{255,255,255,col_val});
-                    //DrawLineV(edge.tip_a, edge.tip_b, WHITE);
-                }
+            for (auto edge : edges | std::views::filter(is_lit) | std::views::transform(fade)) {
+                DrawLineV(edge.tip_a, edge.tip_b, edge.col);
+                //DrawLineV(edge.tip_a, edge.tip_b, WHITE);
             }
 
     	EndDrawing();
