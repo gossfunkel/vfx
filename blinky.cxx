@@ -2,6 +2,7 @@
 #include "raymath.h"
 #include <iostream>
 #include <vector>
+#include <ranges>
 
 #define TAU (M_PI*2.f)
 
@@ -64,6 +65,12 @@ int main() {
     double dt = 0.f;
     double time = 0.f;
 
+    auto is_lit = [](Node node) { return node.lit; };
+    auto fade = [](Node node) {
+        node.col.a = floor(255. * (std::min(node.time_on, 1.) - (std::max(1., node.time_on)-1.)));
+        return node;
+    };
+
     while(!WindowShouldClose()) {
         dt = GetFrameTime();
 
@@ -97,11 +104,8 @@ int main() {
     	BeginDrawing();
     		ClearBackground(BLACK);
 
-            for (auto node : nodes)
-                if (node.lit) {
-                    node.col.a = floor(255. * (std::min(node.time_on, 1.) - (std::max(1., node.time_on)-1.)));
-                    DrawCircleV(node.pos,VERT_SIZE,node.col);
-                }
+            for (auto node : nodes | std::views::filter(is_lit) | std::views::transform(fade))
+                DrawCircleV(node.pos,VERT_SIZE,node.col);
 
             for (auto edge : edges) {
                 if (edge.lit) {
