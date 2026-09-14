@@ -2,8 +2,7 @@
 
 const float TAU = 6.28318531;
 
-uniform mat4 p3d_ModelMatrix;
-uniform mat4 p3d_ViewMatrix;
+uniform mat4 p3d_ModelViewMatrix;
 uniform mat4 p3d_ProjectionMatrix;
 //uniform int osg_FrameNumber;
 uniform float osg_FrameTime;
@@ -25,34 +24,34 @@ out vec2 texcoord;
 out vec4 col;
 flat out uint point_ID;
 
-vec4 generate_tube (vec4 world_pos, float time, uint point_ID) {
-    return vec4(mod(world_pos.x + time + point_ID, scene_scale.x), 
-                    world_pos.y + cos(time + point_ID), 
-                    world_pos.z + sin(time + point_ID), 1);
+void generate_tube (float time, uint point_ID) {
+    positions[point_ID] = vec4(mod(positions[point_ID].x + time + point_ID, scene_scale.x), 
+                    positions[point_ID].y + cos(time + point_ID), 
+                    positions[point_ID].z + sin(time + point_ID), 1);
 }
 
-vec4 generate_hoop (vec4 world_pos, float time, uint point_ID) {
+void generate_hoop (float time, uint point_ID) {
     time *= .01;
-    return vec4(cos(sin(time)*3*time + point_ID)*scene_scale.x,
+    positions[point_ID] = vec4(cos(sin(time)*3*time + point_ID)*scene_scale.x,
                 sin(sin(time)*3*time + point_ID)*scene_scale.y,
                 -cos(time + point_ID)*scene_scale.z, 1.);
 }
 
-vec4 generate_spiral (vec4 world_pos, float time, uint point_ID) {
+void generate_spiral (float time, uint point_ID) {
     time *= .002;
-    return vec4(cos(TAU + time + point_ID)*scene_scale.x,
+    positions[point_ID] = vec4(cos(TAU + time + point_ID)*scene_scale.x,
                 sin(TAU + time + point_ID)*scene_scale.y,
                 -cos(TAU + time + point_ID * .1)*scene_scale.z, 1.);
 }
 
-vec4 generate_spiral2 (vec4 pos, float time, uint point_ID) {
+void generate_spiral2 (float time, uint point_ID) {
     time *= .02;
-    return vec4(cos(4. * TAU * pos.x + time)*scene_scale.x,
-                sin(4. * TAU * pos.x + time)*scene_scale.y,
-                -cos(TAU * pos.x + time * .25)*scene_scale.z, 1.);
+    positions[point_ID] = vec4(cos(4. * TAU * positions[point_ID].x + time)*scene_scale.x,
+                sin(4. * TAU * positions[point_ID].x + time)*scene_scale.y,
+                -cos(TAU * positions[point_ID].x + time * .25)*scene_scale.z, 1.);
 }
 
-void generate_torus (float time, uint point_ID) {
+void spin_torus (float time, uint point_ID) {
     float theta = TAU * time * .2;
     positions[point_ID] += vec4(cos(theta),
                 sin(theta),
@@ -60,7 +59,7 @@ void generate_torus (float time, uint point_ID) {
     //return positions[point_ID];
 }
 
-void spin(float time, float dt, uint point_ID) {
+void spin_flower (float time, float dt, uint point_ID) {
     vec4 prevPos = positions[point_ID];
     // test by spinning in circles
     positions[point_ID] += vec4(cos(point_ID  + time)*10. * dt,
@@ -81,25 +80,15 @@ void main() {
     col = p3d_Color;
     point_ID = gl_VertexID;
 
-    if (state == 1) generate_torus(osg_FrameTime, point_ID);
-    else if (state == 2) spin(osg_FrameTime, osg_DeltaFrameTime, point_ID);
+    if (state == 1) spin_torus(osg_FrameTime, point_ID);
+    else if (state == 2) spin_flower(osg_FrameTime, osg_DeltaFrameTime, point_ID);
 
-    // 1) world space
-    vec4 world_pos = p3d_ModelMatrix * vec4(positions[point_ID].xyz,1.);
-    //world_pos = generate_spiral2(world_pos, time, point_ID);
-
-    // 2) View Space
-
-    vec4 view_pos = p3d_ViewMatrix * world_pos;
+    vec4 wv_pos = p3d_ModelViewMatrix * vec4(positions[point_ID].xyz,1.);
 
     // rotate to antialias by aligning vert with the direction of travel? 
     //  would require next pos or more dynamics
 
-    gl_PointSize = 20. / length(view_pos.xyz);
+    gl_PointSize = 20. / length(wv_pos.xyz);
 
-    // 3) Screen Space
-
-    gl_Position = p3d_ProjectionMatrix * view_pos;
-
-    // gl_PointSize = 20. / gl_Position.w;
+    gl_Position = p3d_ProjectionMatrix * wv_pos;
 }

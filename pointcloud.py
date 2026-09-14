@@ -107,16 +107,34 @@ if __name__ == "__main__":
     def incState():
         attrib = root.get_attrib(ShaderAttrib)
         base.shader_state = (base.shader_state + 1)%NUM_STATES
+        print("Incrementing state to " + str(base.shader_state))
+        attrib = attrib.set_shader_input("state", base.shader_state)
+        root.set_attrib(attrib)
+
+    def setState(st):
+        attrib = root.get_attrib(ShaderAttrib)
+        base.shader_state = (st)%NUM_STATES
+        print("Setting state to " + str(base.shader_state))
+        attrib = attrib.set_shader_input("state", base.shader_state)
+        root.set_attrib(attrib)
+
+    def pauseState():
+        attrib = root.get_attrib(ShaderAttrib)
+        base.shader_state = 0
+        print("Setting state to 0 (paused)")
         attrib = attrib.set_shader_input("state", base.shader_state)
         root.set_attrib(attrib)
 
     base.accept("escape", base.userExit)
 
     base.accept("space", incState)
+    base.accept('p', pauseState)
+    base.accept('1', setState, [1])
+    base.accept('2', setState, [2])
 
     # position camera
     base.cam.setPos(0.,-75.,15.)
     base.cam.setHpr(0.,-2.5,0.)
-    enable_camera_controls()
+    #enable_camera_controls()
 
     base.run()                      # taskMgr takes over from here
