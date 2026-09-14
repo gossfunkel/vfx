@@ -108,10 +108,8 @@ int main() {
             for (auto node : nodes | std::views::filter(is_lit) | std::views::transform(fade))
                 DrawCircleV(node.pos,VERT_SIZE,node.col);
 
-            for (auto edge : edges | std::views::filter(is_lit) | std::views::transform(fade)) {
+            for (auto edge : edges | std::views::filter(is_lit) | std::views::transform(fade))
                 DrawLineV(edge.tip_a, edge.tip_b, edge.col);
-                //DrawLineV(edge.tip_a, edge.tip_b, WHITE);
-            }
 
     	EndDrawing();
     }

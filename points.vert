@@ -12,8 +12,9 @@ uniform float osg_DeltaFrameTime;
 in vec3 p3d_Vertex;
 in vec4 p3d_Color;
 in vec2 p3d_MultiTexCoord0;
-uniform vec3 scene_scale;
-uniform int num_points;
+in vec3 scene_scale;
+in int num_points;
+uniform int state;
 
 // SSBO containing audio data
 layout (std430, binding = 0) buffer ssbo { 
@@ -67,7 +68,7 @@ vec4 lerp_point_to (vec4 pos, vec4 dest, float time, float arrival_time) {
     return pos + speed; // velocity is the change in position for a timestep
 }
 
-vec4 flock(vec4 pos, float time, float dt, uint point_ID) {
+vec4 spin(vec4 pos, float time, float dt, uint point_ID) {
     // do some boid behaviour
     vec4 prevPos = positions[point_ID];
     // test by spinning in circles.
@@ -85,9 +86,10 @@ void main() {
     point_ID = gl_VertexID;
 
     // 1) world space
-    vec4 world_pos = p3d_ModelMatrix * vec4(p3d_Vertex,1.);
+    vec4 world_pos = p3d_ModelMatrix * vec4(positions[point_ID].xyz,1.);
     //world_pos = generate_spiral2(world_pos, time, point_ID);
-    world_pos = flock(world_pos, osg_FrameTime, osg_DeltaFrameTime, point_ID);
+    if (state > 0) world_pos = generate_torus(world_pos, osg_FrameTime);
+    else world_pos = spin(world_pos, osg_FrameTime, osg_DeltaFrameTime, point_ID);
 
     // 2) View Space
 

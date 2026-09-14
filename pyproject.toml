@@ -5,6 +5,8 @@ requires-python = ">=3.13"
 dependencies = [
     "numpy>=2.5.1",
     "panda3d",
+    "scipy>=1.18.1",
+    "sounddevice>=0.5.6",
 ]
 
 [tool.uv.sources]

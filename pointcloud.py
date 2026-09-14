@@ -28,6 +28,8 @@ hardware-animated-vertices true
 """
 load_prc_file_data('', CONFIG)
 
+NUM_STATES = 2
+
 # entry point: this is not to be run from elsewhere
 if __name__ == "__main__":
     print("="*14 + " Point Cloud Animator " + "="*8)
@@ -82,6 +84,8 @@ if __name__ == "__main__":
     nodepath.set_attrib(ColorBlendAttrib.make(ColorBlendAttrib.M_add, ColorBlendAttrib.O_incoming_alpha, ColorBlendAttrib.O_one))
     nodepath.set_depth_write(False)
 
+    base.shader_state = 0
+
     # attach shaders to node
     attrib = ShaderAttrib.make()
     attrib = attrib.setShader(Shader.load(Shader.SL_GLSL,
@@ -90,11 +94,19 @@ if __name__ == "__main__":
     attrib = attrib.set_shader_input("scene_scale", scale)
     attrib = attrib.set_shader_input("num_points", num_points)
     attrib = attrib.set_shader_input("ssbo", ssbo)
+    attrib = attrib.set_shader_input("state", base.shader_state)
     attrib = attrib.set_flag(ShaderAttrib.F_shader_point_size, True)
     root.set_attrib(attrib)
 
-    # set Esc key as quit button
+    def incState():
+        attrib = root.get_attrib(ShaderAttrib)
+        base.shader_state = (base.shader_state + 1)%NUM_STATES
+        attrib = attrib.set_shader_input("state", base.shader_state)
+        root.set_attrib(attrib)
+
     base.accept("escape", base.userExit)
+
+    base.accept("space", incState)
 
     # position camera
     base.cam.setPos(0.,-75.,15.)
