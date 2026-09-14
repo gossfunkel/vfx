@@ -11,7 +11,7 @@ import numpy as np
 import sounddevice as sd
 
 CONFIG = """
-win-size 1200 800
+win-size 1920 1040
 gl-version 4 3
 load-display pandagl
 gl-force-glsl-version 430
@@ -28,7 +28,7 @@ hardware-animated-vertices true
 """
 load_prc_file_data('', CONFIG)
 
-NUM_PTS = 100
+NUM_PTS = 1000
 NUM_STATES = 3
 
 # entry point: this is not to be run from elsewhere
@@ -56,9 +56,9 @@ if __name__ == "__main__":
     vtx_writer = GeomVertexWriter(vtx_data, "vertex")
     col_writer = GeomVertexWriter(vtx_data, "color")
     for pt in range(NUM_PTS):
-        x = float(pt)/width
-        y = float(pt)%depth
-        z = float(pt)/height
+        x = float(pt%10)*2.5
+        y = float(pt%100)/4
+        z = float(pt/1000.)*height
         raw_ssbo_data[pt*4] = x
         raw_ssbo_data[pt*4 + 1] = y
         raw_ssbo_data[pt*4 + 2] = z
@@ -124,16 +124,31 @@ if __name__ == "__main__":
         print("Setting state to 0 (paused)")
         attrib = attrib.set_shader_input("state", base.shader_state)
         root.set_attrib(attrib)
+    
+    def rotate_cam(task):
+        base.cam.set_pos(np.sin(task.frame/200.)*12.5 + 10.,
+            -np.cos(task.frame/200.)*40. + 10.,np.cos(task.frame/800.) + 10.)
+        base.cam.look_at((width/2., depth/2., height/2.))
+        return task.cont
 
+    def toggleCamRotate():
+        base.cam_rotate = not base.cam_rotate
+        if (base.cam_rotate):
+            base.taskMgr.add(rotate_cam, "rotate-camera")
+        else:
+            base.taskMgr.remove("rotate-camera")
+
+    base.cam_rotate = False;
     base.accept("escape", base.userExit)
 
     base.accept("space", incState)
     base.accept('p', pauseState)
     base.accept('1', setState, [1])
     base.accept('2', setState, [2])
+    base.accept('r', toggleCamRotate)
 
     # position camera
-    base.cam.setPos(0.,-75.,15.)
+    base.cam.setPos(12.5,-40.,12.)
     base.cam.setHpr(0.,-2.5,0.)
     #enable_camera_controls()
 

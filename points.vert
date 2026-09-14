@@ -51,11 +51,11 @@ void generate_spiral2 (float time, uint point_ID) {
                 -cos(TAU * positions[point_ID].x + time * .25)*scene_scale.z, 1.);
 }
 
-void spin_torus (float time, uint point_ID) {
+void spin_torus (float time, float dt, uint point_ID) {
     float theta = TAU * time * .2;
-    positions[point_ID] += vec4(cos(theta),
-                sin(theta),
-                sin(8.* theta), 1.);
+    positions[point_ID] += vec4(cos(theta)*dt,
+                sin(theta)*dt,
+                sin(.2 * theta)*dt, 1.);
     //return positions[point_ID];
 }
 
@@ -80,7 +80,7 @@ void main() {
     col = p3d_Color;
     point_ID = gl_VertexID;
 
-    if (state == 1) spin_torus(osg_FrameTime, point_ID);
+    if (state == 1) spin_torus(osg_FrameTime, osg_DeltaFrameTime, point_ID);
     else if (state == 2) spin_flower(osg_FrameTime, osg_DeltaFrameTime, point_ID);
 
     vec4 wv_pos = p3d_ModelViewMatrix * vec4(positions[point_ID].xyz,1.);
