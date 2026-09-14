@@ -53,18 +53,19 @@ vec4 generate_spiral2 (vec4 pos, float time, uint point_ID) {
 }
 
 void generate_torus (float time, uint point_ID) {
-    time *= .002;
-    float theta = TAU * time;
-    positions[point_ID] += vec4(((cos(theta)*scene_scale.x) + cos(theta) * cos(92.*theta)*2.),
-                ((sin(theta)*scene_scale.y + sin(theta) * cos(92.*theta)*2.)),
-                (sin(92.* theta)*2. + scene_scale.z/2.), 1.);
+    float theta = TAU * time * .2;
+    positions[point_ID] += vec4(cos(theta),
+                sin(theta),
+                sin(8.* theta), 1.);
     //return positions[point_ID];
 }
 
 void spin(float time, float dt, uint point_ID) {
     vec4 prevPos = positions[point_ID];
     // test by spinning in circles
-    positions[point_ID] += vec4(cos(time)*point_ID * dt,sin(time)*point_ID * dt, 0., 1.);
+    positions[point_ID] += vec4(cos(point_ID  + time)*10. * dt,
+                                sin(point_ID  + time)*10. * dt, 
+                                -sin(point_ID + time)*10. * dt, 1.);
     //return positions[point_ID];
 }
 
@@ -80,8 +81,8 @@ void main() {
     col = p3d_Color;
     point_ID = gl_VertexID;
 
-    if (state > 0) generate_torus(osg_FrameTime, point_ID);
-    else spin(osg_FrameTime, osg_DeltaFrameTime, point_ID);
+    if (state == 1) generate_torus(osg_FrameTime, point_ID);
+    else if (state == 2) spin(osg_FrameTime, osg_DeltaFrameTime, point_ID);
 
     // 1) world space
     vec4 world_pos = p3d_ModelMatrix * vec4(positions[point_ID].xyz,1.);

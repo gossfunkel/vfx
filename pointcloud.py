@@ -28,7 +28,8 @@ hardware-animated-vertices true
 """
 load_prc_file_data('', CONFIG)
 
-NUM_STATES = 2
+NUM_PTS = 100
+NUM_STATES = 3
 
 # entry point: this is not to be run from elsewhere
 if __name__ == "__main__":
@@ -38,33 +39,38 @@ if __name__ == "__main__":
 
     base.set_background_color(0.,0.,0.,1.)
 
-    # define how many points we will generate
-    num_points = 100
-
     # define the size of the scene
     width = 25.
     depth = 25.
     height = 20.
     scale = Vec3(width, depth, height)
 
+    raw_ssbo_data = np.zeros(4*NUM_PTS, dtype=np.float32)
+
     # define VBO
     vtx_format = GeomVertexFormat.getV3c4()
     vtx_data   = GeomVertexData('pts_vbo', vtx_format, Geom.UHStatic)
-    vtx_data.set_num_rows(num_points)
+    vtx_data.set_num_rows(NUM_PTS)
 
     # fill VBO with initial data and create geometry primitives
     vtx_writer = GeomVertexWriter(vtx_data, "vertex")
     col_writer = GeomVertexWriter(vtx_data, "color")
-    for quad in range(num_points):
-        vtx_writer.add_data3(float(quad)/num_points, 0., 0.)
+    for pt in range(NUM_PTS):
+        x = float(pt)/width
+        y = float(pt)%depth
+        z = float(pt)/height
+        raw_ssbo_data[pt*4] = x
+        raw_ssbo_data[pt*4 + 1] = y
+        raw_ssbo_data[pt*4 + 2] = z
+        vtx_writer.add_data3(x, y, z)
         col_writer.add_data4(1.,1.,1.,1.)
 
     # prepare SSBO of positions
-    ssbo = ShaderBuffer("ssbo", np.array([Vec4(i,i,i,1.) for i in range(num_points)]).tobytes(), GeomEnums.UHDynamic)
+    ssbo = ShaderBuffer("ssbo", raw_ssbo_data.tobytes(), GeomEnums.UHDynamic)
 
     # create primitive for mesh
     prim = GeomPoints(Geom.UHStatic)
-    prim.add_consecutive_vertices(0, num_points)
+    prim.add_consecutive_vertices(0, NUM_PTS)
     prim.close_primitive()
 
     # create mesh
@@ -92,7 +98,7 @@ if __name__ == "__main__":
                                     vertex="points.vert", 
                                     fragment="points.frag"))
     attrib = attrib.set_shader_input("scene_scale", scale)
-    attrib = attrib.set_shader_input("num_points", num_points)
+    attrib = attrib.set_shader_input("NUM_PTS", NUM_PTS)
     attrib = attrib.set_shader_input("ssbo", ssbo)
     attrib = attrib.set_shader_input("state", base.shader_state)
     attrib = attrib.set_flag(ShaderAttrib.F_shader_point_size, True)
