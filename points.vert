@@ -52,32 +52,27 @@ vec4 generate_spiral2 (vec4 pos, float time, uint point_ID) {
                 -cos(TAU * pos.x + time * .25)*scene_scale.z, 1.);
 }
 
-vec4 generate_torus (vec4 pos, float time) {
+void generate_torus (float time, uint point_ID) {
     time *= .002;
-    // pos.x is a range from 0-1 (like linspace)
-    float theta = TAU * pos.x + time; // theta is the angle around the centrepoint where we find the vertex
-    return vec4((cos(theta)*scene_scale.x) + cos(theta) * cos(92.*theta)*2.,
-                sin(theta)*scene_scale.y + sin(theta) * cos(92.*theta)*2.,
-                sin(92.* theta)*2. + scene_scale.z/2., 1.);
+    float theta = TAU * time;
+    positions[point_ID] += vec4(((cos(theta)*scene_scale.x) + cos(theta) * cos(92.*theta)*2.),
+                ((sin(theta)*scene_scale.y + sin(theta) * cos(92.*theta)*2.)),
+                (sin(92.* theta)*2. + scene_scale.z/2.), 1.);
+    //return positions[point_ID];
 }
 
-vec4 lerp_point_to (vec4 pos, vec4 dest, float time, float arrival_time) {
-    float dt_remaining = arrival_time - time;
-    vec4 distance_remaining = dest - pos;
-    vec4 speed = distance_remaining / dt_remaining; // v = s/t
-    return pos + speed; // velocity is the change in position for a timestep
-}
-
-vec4 spin(vec4 pos, float time, float dt, uint point_ID) {
-    // do some boid behaviour
+void spin(float time, float dt, uint point_ID) {
     vec4 prevPos = positions[point_ID];
-    // test by spinning in circles.
-    vec3 speed = vec3(cos(time)*point_ID,sin(time)*point_ID,0.);
-    positions[point_ID] = vec4(prevPos.x + speed.x * dt,
-                               prevPos.y + speed.y * dt,
-                               prevPos.z + speed.z * dt,
-                               1.);
-    return positions[point_ID];
+    // test by spinning in circles
+    positions[point_ID] += vec4(cos(time)*point_ID * dt,sin(time)*point_ID * dt, 0., 1.);
+    //return positions[point_ID];
+}
+
+vec4 lerp_point_to (vec4 dest, float start_time, float time, float arrival_time, float dt, uint point_ID) {
+    float dt_remaining = arrival_time - time;
+    vec4 distance_remaining = dest - positions[point_ID];
+    positions[point_ID] += distance_remaining / dt_remaining; // v = s/t
+    return positions[point_ID]; // velocity is the change in position for a timestep
 }
 
 void main() {
@@ -85,11 +80,12 @@ void main() {
     col = p3d_Color;
     point_ID = gl_VertexID;
 
+    if (state > 0) generate_torus(osg_FrameTime, point_ID);
+    else spin(osg_FrameTime, osg_DeltaFrameTime, point_ID);
+
     // 1) world space
     vec4 world_pos = p3d_ModelMatrix * vec4(positions[point_ID].xyz,1.);
     //world_pos = generate_spiral2(world_pos, time, point_ID);
-    if (state > 0) world_pos = generate_torus(world_pos, osg_FrameTime);
-    else world_pos = spin(world_pos, osg_FrameTime, osg_DeltaFrameTime, point_ID);
 
     // 2) View Space
 
