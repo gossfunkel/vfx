@@ -4,28 +4,36 @@ layout (local_size_x = 4, local_size_y = 4) in;
 uniform float osg_FrameTime;
 uniform float osg_DeltaFrameTime;
 
-uniform int num_invoc;
+uniform int num_pts;
 
 struct point {
     vec4 pos;
     vec3 vel;
 };
 
-layout (std430, binding = 0) buffer pt_buff { 
+layout (std430, binding = 0) readonly buffer pt_buff { 
     point points[];
+};
+
+layout (std430, binding = 1) writeonly buffer vel_buff { 
+    vec3 vels[];
 };
 
 void main() {
     //uint gId = gl_GlobalInvocationID.x * gl_NumWorkGroups.y * 4 + gl_GlobalInvocationID.y;
     //if (gId / num_invoc) return;
     uint pt_a = gl_GlobalInvocationID.x;
-    uint pt_b = gl_GlobalInvocationID.x + 1 + gl_GlobalInvocationID.y;
+    uint pt_b = gl_GlobalInvocationID.y;
     if (pt_b <= pt_a) return;
 
-    vec3 vdist = points[pt_a].pos.xyz - points[pt_b].pos.xyz;
-	float absdist = length(vdist);
-	vec3 normdist = normalize(vdist);
-    float f = (absdist > .01) ? .1/(absdist*absdist) : 0.;
-    points[pt_a].vel -= f * normdist * osg_DeltaFrameTime;
-    points[pt_b].vel += f * normdist * osg_DeltaFrameTime;
+	float absdist = abs(distance(points[pt_b].pos.xyz, points[pt_a].pos.xyz));
+	vec3 normdist = normalize(points[pt_a].pos.xyz - points[pt_b].pos.xyz);
+	if (absdist < .01) {
+		vels[pt_a*num_pts + pt_b] = vec3(0.);
+		vels[pt_b*num_pts + pt_a] = vec3(0.);
+	} else {
+	    float f = .01/(absdist*absdist);
+	    vels[pt_a*num_pts + pt_b] = f * -normdist * osg_DeltaFrameTime;
+	    vels[pt_b*num_pts + pt_a] = f *  normdist * osg_DeltaFrameTime;
+	}
 }

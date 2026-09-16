@@ -33,7 +33,7 @@ void main() {
     // rotate to antialias by aligning vert with the direction of travel? 
     //  would require next pos or more dynamics
 
-    gl_PointSize = 20. / length(wv_pos.xyz);
+    gl_PointSize = 10. / length(wv_pos.xyz);
 
     gl_Position = p3d_ProjectionMatrix * wv_pos;
 }
