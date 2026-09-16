@@ -1,0 +1,31 @@
+#version 430
+
+layout (local_size_x = 4, local_size_y = 4) in;
+uniform float osg_FrameTime;
+uniform float osg_DeltaFrameTime;
+
+uniform int num_invoc;
+
+struct point {
+    vec4 pos;
+    vec3 vel;
+};
+
+layout (std430, binding = 0) buffer pt_buff { 
+    point points[];
+};
+
+void main() {
+    //uint gId = gl_GlobalInvocationID.x * gl_NumWorkGroups.y * 4 + gl_GlobalInvocationID.y;
+    //if (gId / num_invoc) return;
+    uint pt_a = gl_GlobalInvocationID.x;
+    uint pt_b = gl_GlobalInvocationID.x + 1 + gl_GlobalInvocationID.y;
+    if (pt_b <= pt_a) return;
+
+    vec3 vdist = points[pt_a].pos.xyz - points[pt_b].pos.xyz;
+	float absdist = length(vdist);
+	vec3 normdist = normalize(vdist);
+    float f = (absdist > .01) ? .1/(absdist*absdist) : 0.;
+    points[pt_a].vel -= f * normdist * osg_DeltaFrameTime;
+    points[pt_b].vel += f * normdist * osg_DeltaFrameTime;
+}

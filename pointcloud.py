@@ -29,7 +29,7 @@ hardware-animated-vertices true
 load_prc_file_data('', CONFIG)
 
 NUM_PTS = 1000
-NUM_STATES = 3
+NUM_STATES = 4
 
 # entry point: this is not to be run from elsewhere
 if __name__ == "__main__":
@@ -45,7 +45,7 @@ if __name__ == "__main__":
     height = 20.
     scale = Vec3(width, depth, height)
 
-    raw_ssbo_data = np.zeros(4*NUM_PTS, dtype=np.float32)
+    raw_ssbo_data = np.zeros(8*NUM_PTS, dtype=np.float32)
 
     # define VBO
     vtx_format = GeomVertexFormat.getV3c4()
@@ -59,9 +59,9 @@ if __name__ == "__main__":
         x = float(pt%10)*2.5
         y = float(pt%100)/4
         z = float(pt/1000.)*height
-        raw_ssbo_data[pt*4] = x
-        raw_ssbo_data[pt*4 + 1] = y
-        raw_ssbo_data[pt*4 + 2] = z
+        raw_ssbo_data[pt*8] = x
+        raw_ssbo_data[pt*8 + 1] = y
+        raw_ssbo_data[pt*8 + 2] = z
         vtx_writer.add_data3(x, y, z)
         col_writer.add_data4(1.,1.,1.,1.)
 
